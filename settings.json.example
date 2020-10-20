@@ -63,6 +63,6 @@
   "holding_codes": {
     "ILS_CODE": "OCLC_SYMBOL1",
     "ILS_CODE2": "OCLC_SYMBOL1",
-    "ILS_CODE2": "OCLC_SYMBOL2"
+    "ILS_CODE3": "OCLC_SYMBOL2"
   }
 }
