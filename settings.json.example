@@ -1,0 +1,68 @@
+{
+  "client_id": "<OCLC_CLIENT_ID>",
+  "client_secret": "<OCLC_CLIENT_SECRET>",
+  "database": "ohm_swan.sqlite3",
+  "extract_naming_scheme": "tmq_*.mrc",
+  "exclude_periodical": false,
+  "oclc_number": {
+    "tag": "001",
+    "subfield": "",
+    "prefix": "OCoLC",
+    "prefix_in_second_tag": true,
+    "second_tag": "003"
+  },
+  "ils_catalog_key": {
+    "tag": "901",
+    "subfield": "a",
+    "prefix": ""
+  },
+  "item": {
+    "tag": "999",
+    "subfield": "m",
+    "ils_library_code_length": 0,
+    "exclusions": {
+      "k": [
+        "DISCARD",
+        "ON-ORDER",
+        "UNKNOWN"
+      ],
+      "t": [
+        "ART",
+        "EBK_READER",
+        "EBK_RD_NEW",
+        "EQUIPMENT",
+        "EQUIPMENTJ",
+        "E-BOOKS",
+        "ILL_BOOK",
+        "LEASED_AB",
+        "MP3",
+        "MP3_SPK_WD",
+        "NS_ILL_PRT",
+        "NS_ILL_VID",
+        "NEW_RENTAL",
+        "ON_THE_FLY",
+        "PUPPET",
+        "PUZZLE",
+        "TOY",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "bib_exclusions": {
+    "945": {
+      "subfield": "",
+      "data": "*"
+    },
+    "977": {
+      "subfield": "a",
+      "data": [
+        "PRE-CAT"
+      ]
+    }
+  },
+  "holding_codes": {
+    "ILS_CODE": "OCLC_SYMBOL1",
+    "ILS_CODE2": "OCLC_SYMBOL1",
+    "ILS_CODE2": "OCLC_SYMBOL2"
+  }
+}
