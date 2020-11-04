@@ -7,6 +7,7 @@ from requests_oauthlib import OAuth2Session
 import time
 from urllib.parse import quote
 import uuid
+from retrying import retry
 
 class OhmOclc:
 
@@ -69,6 +70,7 @@ class OhmOclc:
         
         return failed_symbols
     
+    @retry
     def unset_holding(self, oclc_number, symbols):
 
         divided_symbols = list(self.divide_chunks(symbols, 50))
@@ -78,10 +80,10 @@ class OhmOclc:
             url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}&cascade=1"
             delete = self.session.delete(url=url, headers=self.headers)
             file_name = f"results/delete_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'wb').write(delete.json())
+            open(f'{file_name}.json', 'w').write(delete.text)
         self.session.close()
 
-
+    @retry
     def set_holding(self, oclc_number, symbols):
 
         divided_symbols = list(self.divide_chunks(symbols, 50))
@@ -91,7 +93,7 @@ class OhmOclc:
             url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}"
             add = self.session.post(url=url, headers=self.headers)
             file_name = f"results/add_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'wb').write(add.json())
+            open(f'{file_name}.json', 'w').write(add.text)
         self.session.close()
 
     def __init__(self, oclc_credentials: tuple):
