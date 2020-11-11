@@ -5,7 +5,17 @@ from ohm_database import OhmDatabase
 from ohm_marc import OhmMarc
 from ohm_oclc import OhmOclc
 
+def sort_changes(changes_list):
+    changes = {}
+    for entry in changes_list:
+        if entry[0] not in changes.keys():
+            changes[entry[0]]=[entry[1]]
+        else:
+            changes[entry[0]].append(entry[1])
+    return changes
 
+adds_sorted = {}
+deletes_sorted = {}
 
 cli_ui.info_1("Welcome to OCLC Holdings Manager")
 
@@ -17,8 +27,8 @@ settings = OhmSettings(settings_file)
 # load sqlite3 database
 database = OhmDatabase(settings.database)
 
-# get list of tables
-tables = database.list_tables()
+# initialize OCLC API
+oclc_conn = OhmOclc(settings.oclc_credentials)
 
 menu_items = ("Parse MARC extract", "Compare changes", "Send to OCLC", "Test OCLC WSKey", "Exit")
 
@@ -38,6 +48,8 @@ while True:
         parse_marc.parse_marc_file()
 
     elif menu_choice == "Compare changes":
+        # get list of tables
+        tables = database.list_tables()
         current_data = cli_ui.ask_choice("Which is the latest data?", choices=tables, sort=False)
         tables.remove(current_data)
         previous_data = cli_ui.ask_choice("Which is the last run's data?", choices=tables, sort=False)
@@ -49,11 +61,21 @@ while True:
 
         print(f'{len(adds)} Adds, {len(deletes)} Deletes')
 
+        adds_sorted = sort_changes(adds)
+        deletes_sorted = sort_changes(deletes)
+
     elif menu_choice == "Send to OCLC":
-        print("Placeholder for full OCLC functionality")
+        if len(adds_sorted) == 0 and len(deletes_sorted) == 0:
+            print("Please compare changes first.")
+        else:
+            for oclc_num in deletes_sorted:
+                print(f'{oclc_num}: {deletes_sorted[oclc_num]}')
+                oclc_conn.unset_holding(oclc_num, deletes_sorted[oclc_num])
+            for oclc_num in adds_sorted:
+                print(f'{oclc_num}: {adds_sorted[oclc_num]}')
+                oclc_conn.set_holding(oclc_num, adds_sorted[oclc_num])
 
     elif menu_choice == "Test OCLC WSKey":
-        oclc_conn = OhmOclc(settings.oclc_credentials)
         failed_symbols = oclc_conn.test_wskey(settings.holding_map)
 
         if len(failed_symbols) > 0:

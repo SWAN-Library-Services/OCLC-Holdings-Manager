@@ -19,7 +19,10 @@ class OhmMarc:
         self.database.create_table(self.table_name)
 
     def get_all_subfields(self, field):
-        return field.field_data.split(bytes.fromhex('1f').decode())
+        try:
+            return field.field_data.split(bytes.fromhex('1f').decode())
+        except:
+            return ""
 
     # returns first result or empty string if not found
     def get_subfield_by_code(self, field, subfield_code):
@@ -167,7 +170,7 @@ class OhmMarc:
                 self.count += 1
 
         # Write changes and close sqlite database
-        self.database.commit_and_close()
+        self.database.commit_changes()
 
         # display count
         print("count: " + str(self.count))
