@@ -7,7 +7,6 @@ from requests_oauthlib import OAuth2Session
 import time
 from urllib.parse import quote
 import uuid
-from retrying import retry
 
 class OhmOclc:
 
@@ -30,9 +29,18 @@ class OhmOclc:
         auth = HTTPBasicAuth(self.client_id, self.client_secret)
         client = BackendApplicationClient(client_id=self.client_id, scopes=scopes, auto_refresh_url=token_url, auto_refresh_kwargs=extra, token_updater=self.token_updater)
 
-        self.session = OAuth2Session(client=client,)
-        self.session.fetch_token(token_url=token_url, auth=auth, scope=scopes, include_client_id=True, )
-
+        try:
+            self.session = OAuth2Session(client=client,)
+            self.session.fetch_token(token_url=token_url, auth=auth, scope=scopes, include_client_id=True, )
+        except:
+            self.retry += 1
+            sleep_time = 10 * self.retry
+            print(f"Failed OCLC API login, retrying in {sleep_time} seconds.")
+            self.session.close()
+            time.sleep(sleep_time)
+            self.oclc_login()
+        
+        self.retry = 0
 
     def test_wskey(self, holding_map):
 
@@ -70,7 +78,7 @@ class OhmOclc:
         
         return failed_symbols
     
-    @retry
+
     def unset_holding(self, oclc_number, symbols):
 
         divided_symbols = list(self.divide_chunks(symbols, 50))
@@ -78,12 +86,22 @@ class OhmOclc:
         for library_symbols in divided_symbols:
             url_symbols = ','.join(library_symbols)
             url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}&cascade=1"
-            delete = self.session.delete(url=url, headers=self.headers)
-            file_name = f"results/delete_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'w').write(delete.text)
+            try:
+                delete = self.session.delete(url=url, headers=self.headers)           
+                file_name = f"results/delete_{uuid.uuid1()}"
+                open(f'{file_name}.json', 'w').write(delete.text)
+            except:
+                self.retry += 1
+                sleep_time = 10 * self.retry
+                print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
+                self.session.close()
+                time.sleep(sleep_time)
+                self.oclc_login()
+                self.unset_holding(oclc_number, library_symbols)
         self.session.close()
+        self.retry = 0
 
-    @retry
+
     def set_holding(self, oclc_number, symbols):
 
         divided_symbols = list(self.divide_chunks(symbols, 50))
@@ -91,10 +109,20 @@ class OhmOclc:
         for library_symbols in divided_symbols:
             url_symbols = ','.join(library_symbols)
             url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}"
-            add = self.session.post(url=url, headers=self.headers)
-            file_name = f"results/add_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'w').write(add.text)
+            try:
+                add = self.session.post(url=url, headers=self.headers)
+                file_name = f"results/add_{uuid.uuid1()}"
+                open(f'{file_name}.json', 'w').write(add.text)
+            except:
+                self.retry += 1
+                sleep_time = 10 * self.retry
+                print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
+                self.session.close()
+                time.sleep(sleep_time)
+                self.oclc_login()
+                self.set_holding(oclc_number, library_symbols)
         self.session.close()
+        self.retry = 0
 
     def __init__(self, oclc_credentials: tuple):
         self.client_id = oclc_credentials[0]
@@ -102,5 +130,6 @@ class OhmOclc:
         self.headers = {'Accept': 'application/json'}
         self.token = None
         self.session = None
+        self.retry = 0
 
         self.oclc_login()
