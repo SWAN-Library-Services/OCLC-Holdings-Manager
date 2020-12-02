@@ -30,7 +30,7 @@ database = OhmDatabase(settings.database)
 # initialize OCLC API
 oclc_conn = OhmOclc(settings.oclc_credentials)
 
-menu_items = ("Parse MARC extract", "Compare changes", "Send to OCLC", "Test OCLC WSKey", "Exit")
+menu_items = ("Parse MARC extract", "Compare changes", "Send to OCLC", "Analyze Results","Test OCLC WSKey", "Exit")
 
 while True:
     menu_choice = cli_ui.ask_choice("OHM Main Menu", choices=menu_items, sort=False)
@@ -74,6 +74,12 @@ while True:
             for oclc_num in adds_sorted:
                 print(f'{oclc_num}: {adds_sorted[oclc_num]}')
                 oclc_conn.set_holding(oclc_num, adds_sorted[oclc_num])
+
+    elif menu_choice == "Analyze Results":
+        results_directories = glob.glob('*results')
+        directory = cli_ui.ask_choice("Which directory?", choices=results_directories)
+        file_prefix = cli_ui.ask_string("What should I use as a prefix for the output files?")
+        oclc_conn.analyze_results(results_directory = directory, file_prefix = file_prefix)
 
     elif menu_choice == "Test OCLC WSKey":
         failed_symbols = oclc_conn.test_wskey(settings.holding_map)
